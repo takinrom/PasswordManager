@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">PasswordManager</string>
+    <string name="add_account_button_text">Add account button</string>
+    <string name="generate_checkbox_text">Generate</string>
+    <string name="service_input_hint">example.com</string>
+    <string name="login_input_hint">login1234</string>
+    <string name="password_input_hint">password</string>
+    <string name="special_characters_checkbox">special characters</string>
+    <string name="digits_checkbox">digits</string>
+    <string name="ascii_letters_checkbox">ascii letters</string>
+    <string name="password_length_hint">Length</string>
+    <string name="submit_button_text">Submit</string>
+    <string name="password_length_label">Length:</string>
+    <string name="DefaultPasswordLength">12</string>
+    <string name="reconnect_button_text">CONNECT</string>
+</resources>
