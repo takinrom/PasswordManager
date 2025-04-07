@@ -197,7 +197,6 @@ public class MainActivity extends AppCompatActivity {
                                     }
                                 }
                             });
-                            //TODO
                         }));
                         recyclerView.setAdapter(adapter);
                     });
@@ -352,6 +351,7 @@ public class MainActivity extends AppCompatActivity {
                             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                                 super.onConnectionStateChange(gatt, status, newState);
                                 Log.i("NEW STATE", "State: " + newState);
+                                gatt.requestMtu(517);
                                 if (newState == BluetoothProfile.STATE_CONNECTED) {
                                     gatt.discoverServices();
                                 } else {
