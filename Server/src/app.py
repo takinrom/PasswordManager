@@ -2,6 +2,8 @@ from flask import Flask, request, g, make_response, abort
 from random import randint
 import sqlite3
 
+import config
+
 app = Flask(__name__)
 
 
@@ -10,8 +12,6 @@ DB_INIT_SCRIPT = '''CREATE TABLE IF NOT EXISTS data (id INTEGER NOT NULL PRIMARY
                                                      service TEXT NOT NULL,
                                                      login TEXT NOT NULL,
                                                      encrypted_password TEXT NOT NULL);'''
-
-SECRET = 'HTTP Auth token'
 
 @app.route("/logins", methods=["GET"])
 def logins():
