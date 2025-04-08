@@ -1,5 +1,7 @@
 package me.takinrom.passwordmanager;
 
+import static me.takinrom.passwordmanager.Properties.*;
+
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
@@ -79,10 +81,6 @@ import okhttp3.ResponseBody;
 
 public class MainActivity extends AppCompatActivity {
 
-    private final String SERVER_URL = "https://ip:port";
-    private final String SECRET = "Server Auth token";
-    private final String BLE_SECURITY_TOKEN = "BLE Auth token";
-    private final String BLE_DEVICE_NAME = "BLE device name";
     private final String BLE_SERVICE_UUID = "58882f50-2cf8-4468-a65b-34ae3a5f7a88";
     private final String BLE_TOKEN_CHARACTERISTIC_UUID = "d7e035d2-b43a-40c7-8941-0f17078214de";
     private final String BLE_DATA_CHARACTERISTIC_UUID = "56b4864d-9ac2-4699-b31b-3bb23ca96ee4";
