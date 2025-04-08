@@ -7,6 +7,7 @@
 #include <OneButton.h>
 
 #include <crypto.h>
+#include <properties.h>
 
 SET_LOOP_TASK_STACK_SIZE(32 * 1024);
 
@@ -15,8 +16,6 @@ SET_LOOP_TASK_STACK_SIZE(32 * 1024);
 #define BTN_PIN 0
 
 OneButton button(BTN_PIN, true);
-
-String TOKEN = "BLE Auth token";
 
 bool is_auth[1024] = {0};
 NimBLEServer *pServer;
