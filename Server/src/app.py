@@ -2,7 +2,7 @@ from flask import Flask, request, g, make_response, abort
 from random import randint
 import sqlite3
 
-import config
+from config import SECRET
 
 app = Flask(__name__)
 
