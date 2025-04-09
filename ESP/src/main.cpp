@@ -17,6 +17,8 @@ SET_LOOP_TASK_STACK_SIZE(32 * 1024);
 
 OneButton button(BTN_PIN, true);
 
+String tokenString = TOKEN;
+
 bool is_auth[1024] = {0};
 NimBLEServer *pServer;
 mbedtls_pk_context pk;
@@ -85,7 +87,7 @@ class tokenCharacteristicCallbacks : public NimBLECharacteristicCallbacks
         }
         Serial.println();
         Serial.flush();
-        if (TOKEN.equals(pCharacteristic->getValue().c_str())) {
+        if (tokenString.equals(pCharacteristic->getValue().c_str())) {
             is_auth[connInfo.getConnHandle()] = true;
         } else {
             pServer->disconnect(connInfo);
@@ -133,7 +135,7 @@ void setup()
         keyboard.write((const uint8_t*)decrypted, strlen(decrypted));
     });
 
-    NimBLEDevice::init(DEVICE_NAME.c_str());
+    NimBLEDevice::init(DEVICE_NAME);
     NimBLEDevice::setSecurityAuth(true, true, true); /** bonding, MITM, BLE secure connections */
     NimBLEDevice::setSecurityPasskey(123456);
     NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY); /** Display only passkey */
