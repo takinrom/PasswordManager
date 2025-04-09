@@ -133,7 +133,7 @@ void setup()
         keyboard.write((const uint8_t*)decrypted, strlen(decrypted));
     });
 
-    NimBLEDevice::init("<BLE device name>");
+    NimBLEDevice::init(DEVICE_NAME.c_str());
     NimBLEDevice::setSecurityAuth(true, true, true); /** bonding, MITM, BLE secure connections */
     NimBLEDevice::setSecurityPasskey(123456);
     NimBLEDevice::setSecurityIOCap(BLE_HS_IO_DISPLAY_ONLY); /** Display only passkey */
