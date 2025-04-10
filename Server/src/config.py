@@ -1,1 +1,0 @@
-SECRET = 'HTTP Auth token'
