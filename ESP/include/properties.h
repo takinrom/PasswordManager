@@ -1,4 +1,4 @@
 #include <Arduino.h>
 
-String DEVICE_NAME;
-String TOKEN;
+#define DEVICE_NAME ""
+#define TOKEN ""
