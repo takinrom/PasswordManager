@@ -19,10 +19,8 @@ $ pip3 install -r requirements.txt
 ```
 Отредактировать: 
 ```
-app.py:
-    ...  
+config.py.example -> config.py:
     SECRET = '<Server Auth token>'
-    ...
 start.sh:
     ... --bind=0.0.0.0:<port> ...
 ```
@@ -37,12 +35,9 @@ $ ./start.sh
 ### Настройка
 Отредактировать: 
 ``` 
-main.cpp:
-    ...
-    String TOKEN = "BLE Auth token";
-    ...
-    NimBLEDevice::init("<BLE device name>");
-    ...
+include/properties.h.example -> include/properties.h:
+    #define DEVICE_NAME ""
+    #define TOKEN ""
 ```
 ### Сборка
 Достатьчно открыть проект в PlatformIO и нажать Собрать & Загрузить
@@ -57,7 +52,7 @@ main.cpp:
 ### Настройка 
 Отредактировать: 
 ```
-MainActivity.java:
+Properties.java -> Properties.java.example:
     private final String SERVER_URL = "https://<ip>:<port>";
     private final String SECRET = "<Server Auth token>";
     private final String BLE_SECURITY_TOKEN = "<BLE Auth token>";
@@ -66,5 +61,4 @@ MainActivity.java:
 #### Необходимо положить сертификат сервера в src/main/res/raw/cert.pem и открытый ключ шифрования паролей(выводится микроконтроллером в Serial при каждом запуске) в src/main/res/raw/key.pem
 
 ### Сборка 
-Рекомендуется собирать в Android studio
-
+Сборка проекта Android Studio
