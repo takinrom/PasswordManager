@@ -1,0 +1,1 @@
+SECRET = 'HTTP Auth token'
