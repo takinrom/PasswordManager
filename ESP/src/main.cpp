@@ -32,12 +32,14 @@ class serverCallbacks : public NimBLEServerCallbacks
     void onConnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo)
     {
         pServer->startAdvertising();
-        if (connInfo.getConnHandle() > 1000) {
+        if (connInfo.getConnHandle() > 1000)
+        {
             pServer->disconnect(connInfo);
         }
     }
 
-    void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) {
+    void onDisconnect(NimBLEServer *pServer, NimBLEConnInfo &connInfo, int reason)
+    {
         is_auth[connInfo.getConnHandle()] = false;
     }
 };
@@ -47,28 +49,35 @@ class dataCharacteristicCallbacks : public NimBLECharacteristicCallbacks
     void onWrite(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo &connInfo)
     {
         Serial.println("DATA");
-        const char* token = pCharacteristic->getValue().c_str();
+        const char *token = pCharacteristic->getValue().c_str();
         int n = pCharacteristic->getValue().length();
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++)
+        {
             Serial.printf("0x%02x, ", token[i]);
         }
         Serial.println();
         Serial.flush();
 
-        if (is_auth[connInfo.getConnHandle()]) {
+        if (is_auth[connInfo.getConnHandle()])
+        {
             NimBLEAttValue value = pCharacteristic->getValue();
             const uint8_t *data = value.data();
             // char *decrypted = (char *)malloc(mbedtls_pk_rsa(pk)->len);
             memset(decrypted, 0, mbedtls_pk_rsa(pk)->len);
             int res;
-            if ((res = decrypt(&pk, data, decrypted)) != 0) {
+            if ((res = decrypt(&pk, data, decrypted)) != 0)
+            {
                 Serial.printf("Decryption error: -0x%04x\n", -res);
-            } else {
+            }
+            else
+            {
                 Serial.print("Decrypted: ");
                 Serial.println(decrypted);
                 Serial.flush();
             }
-        } else {
+        }
+        else
+        {
             Serial.println("Not authenticated");
         }
         Serial.flush();
@@ -80,16 +89,20 @@ class tokenCharacteristicCallbacks : public NimBLECharacteristicCallbacks
     void onWrite(NimBLECharacteristic *pCharacteristic, NimBLEConnInfo &connInfo)
     {
         Serial.println("TOKEN");
-        const char* token = pCharacteristic->getValue().c_str();
+        const char *token = pCharacteristic->getValue().c_str();
         int n = pCharacteristic->getValue().length();
-        for (int i = 0; i < n; i++) {
+        for (int i = 0; i < n; i++)
+        {
             Serial.printf("0x%02x, ", token[i]);
         }
         Serial.println();
         Serial.flush();
-        if (tokenString.equals(pCharacteristic->getValue().c_str())) {
+        if (tokenString.equals(pCharacteristic->getValue().c_str()))
+        {
             is_auth[connInfo.getConnHandle()] = true;
-        } else {
+        }
+        else
+        {
             pServer->disconnect(connInfo);
         }
     }
@@ -97,25 +110,27 @@ class tokenCharacteristicCallbacks : public NimBLECharacteristicCallbacks
 
 void setup()
 {
-    Serial.begin(115200);
+    // Serial.begin(115200);
     EEPROM.begin(4096);
     delay(4000);
     Serial.println("Start");
     Serial.flush();
 
 #ifdef NEW_KEY
-    if (new_key(pk) != 0) {
+    if (new_key(pk) != 0)
+    {
         Serial.println("Key generation error");
         Serial.flush();
         return;
     }
 #else
     int ret;
-    if ((ret = load_key(pk)) != 0) {
+    if ((ret = load_key(pk)) != 0)
+    {
         Serial.printf("Key loading error: %d\n", ret);
         Serial.flush();
         return;
-    }     
+    }
     unsigned char output_buf[8192];
     if ((ret = mbedtls_pk_write_pubkey_pem(&pk, output_buf, sizeof(output_buf))) != 0)
     {
@@ -129,11 +144,10 @@ void setup()
     keyboard.begin();
     USB.begin();
 
-    decrypted = (char*)malloc(mbedtls_pk_rsa(pk)->len);
+    decrypted = (char *)malloc(mbedtls_pk_rsa(pk)->len);
 
-    button.attachClick([] {
-        keyboard.write((const uint8_t*)decrypted, strlen(decrypted));
-    });
+    button.attachClick([]
+                       { keyboard.write((const uint8_t *)decrypted, strlen(decrypted)); });
 
     NimBLEDevice::init(DEVICE_NAME);
     NimBLEDevice::setSecurityAuth(true, true, true); /** bonding, MITM, BLE secure connections */
@@ -149,7 +163,7 @@ void setup()
                                        NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_ENC | NIMBLE_PROPERTY::WRITE_AUTHEN);
     pDataCharacteristic->setCallbacks(new dataCharacteristicCallbacks());
 
-    NimBLECharacteristic *pTokenCharacteristic = 
+    NimBLECharacteristic *pTokenCharacteristic =
         pService->createCharacteristic("d7e035d2-b43a-40c7-8941-0f17078214de",
                                        NIMBLE_PROPERTY::WRITE | NIMBLE_PROPERTY::WRITE_ENC | NIMBLE_PROPERTY::WRITE_AUTHEN);
     pTokenCharacteristic->setCallbacks(new tokenCharacteristicCallbacks());

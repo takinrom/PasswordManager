@@ -11,7 +11,7 @@
 
 #include <bootloader_random.h>
 
-#define KEY_SIZE 1024 
+#define KEY_SIZE 4096
 #define EXPONENT 65537
 
 int SD_CLK = 12;
@@ -85,23 +85,27 @@ int new_key(mbedtls_pk_context &res)
     EEPROM.writeByte(0, 1);
     EEPROM.commit();
 
-    if (!SD_MMC.setPins(SD_CLK, SD_CMD, SD_D0, SD_D1, SD_D2, SD_D3)) {
-      Serial.println("Pin change failed!");
-      goto exit;
+    if (!SD_MMC.setPins(SD_CLK, SD_CMD, SD_D0, SD_D1, SD_D2, SD_D3))
+    {
+        Serial.println("Pin change failed!");
+        goto exit;
     }
-    if (!SD_MMC.begin()) {
-      Serial.println("Card Mount Failed");
-      goto exit;
+    if (!SD_MMC.begin())
+    {
+        Serial.println("Card Mount Failed");
+        goto exit;
     }
 
     new_name = "/key" + generateRandomString(12);
-    if (SD_MMC.exists("/key")) {
+    if (SD_MMC.exists("/key"))
+    {
         SD_MMC.rename("/key", new_name);
         Serial.println("/key already exists. Renamed to " + new_name);
     }
     file = SD_MMC.open("/key", "w", true);
 
-    for (int i = 0; output_buf[i] != '\0'; i++) {
+    for (int i = 0; output_buf[i] != '\0'; i++)
+    {
         file.write(output_buf[i]);
     }
     file.close();
@@ -118,7 +122,8 @@ int new_key(mbedtls_pk_context &res)
 exit:
     mbedtls_ctr_drbg_free(&ctr_drbg);
     mbedtls_entropy_free(&entropy);
-    if (ret == 0) {
+    if (ret == 0)
+    {
         res.pk_ctx = pk.pk_ctx;
         res.pk_info = pk.pk_info;
     }
@@ -137,10 +142,10 @@ int load_key(mbedtls_pk_context &res)
     mbedtls_pk_init(&pk);
     int ret;
 
-    char new_key[key.length()]; 
+    char new_key[key.length()];
     memcpy(new_key, key.c_str(), key.length());
     new_key[key.length() - 1] = 0;
-    if ((ret = mbedtls_pk_parse_key(&pk, (const unsigned char*)new_key, key.length(), NULL, 0)) != 0)
+    if ((ret = mbedtls_pk_parse_key(&pk, (const unsigned char *)new_key, key.length(), NULL, 0)) != 0)
     {
         Serial.printf("parse error: -0x%04x\n", -ret);
         Serial.flush();
@@ -153,7 +158,7 @@ int load_key(mbedtls_pk_context &res)
 
 /**
  * \param decrypted the size must be equal to the key size
-*/
+ */
 int decrypt(mbedtls_pk_context *pk, const uint8_t *data, char *decrypted)
 {
     int res = 0;
@@ -175,23 +180,26 @@ int decrypt(mbedtls_pk_context *pk, const uint8_t *data, char *decrypted)
     }
 
     size_t decrypted_length = 0;
-    res = mbedtls_rsa_rsaes_oaep_decrypt( mbedtls_pk_rsa(*pk), mbedtls_ctr_drbg_random, &ctr_drbg, MBEDTLS_RSA_PRIVATE, NULL, 0, &decrypted_length, (const uint8_t *)data, (unsigned char*)decrypted, mbedtls_pk_rsa(*pk)->len);
-    if (res != 0) {
+    res = mbedtls_rsa_rsaes_oaep_decrypt(mbedtls_pk_rsa(*pk), mbedtls_ctr_drbg_random, &ctr_drbg, MBEDTLS_RSA_PRIVATE, NULL, 0, &decrypted_length, (const uint8_t *)data, (unsigned char *)decrypted, mbedtls_pk_rsa(*pk)->len);
+    if (res != 0)
+    {
         Serial.printf("decrypting error: -0x%04x\n", -res);
         return res;
     }
     return 0;
 }
 
-String generateRandomString(size_t length) {
+String generateRandomString(size_t length)
+{
     String result = "";
     const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
     const size_t charsetSize = sizeof(charset) - 1;
-  
-    for (size_t i = 0; i < length; i++) {
+
+    for (size_t i = 0; i < length; i++)
+    {
         uint32_t randIndex = esp_random() % charsetSize;
         result += charset[randIndex];
     }
-  
+
     return result;
-  }
+}
