@@ -11,7 +11,7 @@
 
 SET_LOOP_TASK_STACK_SIZE(32 * 1024);
 
-// #define NEW_KEY
+#define NEW_KEY
 
 #define BTN_PIN 0
 
@@ -97,7 +97,7 @@ class tokenCharacteristicCallbacks : public NimBLECharacteristicCallbacks
 
 void setup()
 {
-    // Serial.begin(115200);
+    Serial.begin(115200);
     EEPROM.begin(4096);
     delay(4000);
     Serial.println("Start");

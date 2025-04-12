@@ -1,6 +1,8 @@
 #include <Arduino.h>
 
 #include <EEPROM.h>
+#include <FS.h>
+#include <SD_MMC.h>
 
 #include <mbedtls/pk.h>
 #include <mbedtls/rsa.h>
@@ -9,8 +11,17 @@
 
 #include <bootloader_random.h>
 
-#define KEY_SIZE 4096
+#define KEY_SIZE 1024 
 #define EXPONENT 65537
+
+int SD_CLK = 12;
+int SD_CMD = 16;
+int SD_D0 = 14;
+int SD_D1 = 17;
+int SD_D2 = 21;
+int SD_D3 = 18;
+
+String generateRandomString(size_t length);
 
 int entropy_callback(void *data, unsigned char *output, size_t len, size_t *olen)
 {
@@ -25,6 +36,9 @@ int new_key(mbedtls_pk_context &res)
     mbedtls_rsa_context rsa;
     mbedtls_entropy_context entropy;
     mbedtls_ctr_drbg_context ctr_drbg;
+
+    String new_name;
+    File file;
 
     unsigned char output_buf[8192] = {0};
 
@@ -70,6 +84,28 @@ int new_key(mbedtls_pk_context &res)
     EEPROM.writeString(1, *(new String((char *)output_buf)));
     EEPROM.writeByte(0, 1);
     EEPROM.commit();
+
+    if (!SD_MMC.setPins(SD_CLK, SD_CMD, SD_D0, SD_D1, SD_D2, SD_D3)) {
+      Serial.println("Pin change failed!");
+      goto exit;
+    }
+    if (!SD_MMC.begin()) {
+      Serial.println("Card Mount Failed");
+      goto exit;
+    }
+
+    new_name = "/key" + generateRandomString(12);
+    if (SD_MMC.exists("/key")) {
+        SD_MMC.rename("/key", new_name);
+        Serial.println("/key already exists. Renamed to " + new_name);
+    }
+    file = SD_MMC.open("/key", "w", true);
+
+    for (int i = 0; output_buf[i] != '\0'; i++) {
+        file.write(output_buf[i]);
+    }
+    file.close();
+    SD_MMC.end();
 
     memset(output_buf, 0, sizeof(output_buf));
     if ((ret = mbedtls_pk_write_pubkey_pem(&pk, output_buf, sizeof(output_buf))) != 0)
@@ -146,3 +182,16 @@ int decrypt(mbedtls_pk_context *pk, const uint8_t *data, char *decrypted)
     }
     return 0;
 }
+
+String generateRandomString(size_t length) {
+    String result = "";
+    const char charset[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    const size_t charsetSize = sizeof(charset) - 1;
+  
+    for (size_t i = 0; i < length; i++) {
+        uint32_t randIndex = esp_random() % charsetSize;
+        result += charset[randIndex];
+    }
+  
+    return result;
+  }
