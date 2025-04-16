@@ -3,6 +3,12 @@ package me.takinrom.passwordmanager;
 public class Account {
     private final String service;
     private final String login;
+    private int id;
+    public Account (int id, String service, String login) {
+        this.id = id;
+        this.service = service;
+        this.login = login;
+    }
     public Account(String service, String login) {
         this.service = service;
         this.login = login;
@@ -14,5 +20,9 @@ public class Account {
 
     public String getService() {
         return service;
+    }
+
+    public int getId() {
+        return id;
     }
 }

@@ -11,8 +11,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 public class AccountAdapter extends RecyclerView.Adapter<AccountAdapter.ViewHolder> {
 
-    interface OnClickListener {
-        void onAccountClick(Account account, int position);
+    public interface OnClickListener {
+        void onAccountClick(Account account);
     }
 
     private final LayoutInflater inflater;
@@ -38,12 +38,7 @@ public class AccountAdapter extends RecyclerView.Adapter<AccountAdapter.ViewHold
         Account account = accounts[position];
         holder.serviceView.setText(account.getService());
         holder.loginView.setText(account.getLogin());
-        holder.itemView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                onClickListener.onAccountClick(account, position);
-            }
-        });
+        holder.itemView.setOnClickListener(v -> onClickListener.onAccountClick(account));
     }
 
     @Override

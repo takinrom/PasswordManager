@@ -13,4 +13,6 @@
     <string name="password_length_label">Length:</string>
     <string name="DefaultPasswordLength">12</string>
     <string name="reconnect_button_text">CONNECT</string>
+    <string name="use_server_db_text">Use server DB</string>
+    <string name="use_local_db_text">Use local DB</string>
 </resources>

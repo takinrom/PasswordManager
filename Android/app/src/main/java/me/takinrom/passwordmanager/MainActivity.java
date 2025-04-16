@@ -90,6 +90,9 @@ public class MainActivity extends AppCompatActivity {
     private static MainActivity activity;
     private PublicKey publicKey;
 
+    private boolean useLocalDB = true;
+    private final DBHelper db = new DBHelper(this);
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -136,73 +139,95 @@ public class MainActivity extends AppCompatActivity {
         addButton.setOnClickListener(v -> showFormDialog());
         MaterialButton reconnectButton = findViewById(R.id.reconnect_button);
         reconnectButton.setOnClickListener(v -> bleConnector.run());
+        MaterialButton changeDbButton = findViewById(R.id.change_db_button);
+        changeDbButton.setOnClickListener(v -> {
+            useLocalDB = !useLocalDB;
+            updateAccountsArray();
+            changeDbButton.setText(useLocalDB ? R.string.use_server_db_text : R.string.use_local_db_text);
+        });
     }
 
     private void updateAccountsArray() {
-        Request request = new Request.Builder().url(SERVER_URL + "/logins").header("Authorization", SECRET).build();
-        httpClient.newCall(request).enqueue(new Callback() {
-            @Override
-            public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                runOnUiThread(() -> showErrorDialog(e.toString()));
-            }
-
-            @Override
-            public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                if (response.isSuccessful()) {
-                    ResponseBody body = response.body();
-                    if (body == null) {
-                        runOnUiThread(() -> showErrorDialog("Server response is empty"));
-                        return;
-                    }
-                    Gson gson = new Gson();
-                    List<List<String>> json = gson.fromJson(body.string(), new TypeToken<Collection<Collection<String>>>() {
-                    }.getType());
-                    int n = json.size();
-                    accounts = new Account[n];
-                    for (int i = 0; i < n; i++) {
-                        List<String> item = json.get(i);
-                        if (item.get(0) == null || item.get(1) == null) {
-                            accounts[i] = new Account("Error", "Error");
-                        } else {
-                            accounts[i] = new Account(item.get(0), item.get(1));
-                        }
-                    }
-                    runOnUiThread(() -> {
-                        RecyclerView recyclerView = findViewById(R.id.list);
-                        AccountAdapter adapter = new AccountAdapter(MainActivity.this, accounts, ((account, position) -> {
-                            Request request = new Request.Builder().url(SERVER_URL + "/pass?service=" + account.getService() + "&login=" + account.getLogin()).header("Authorization", SECRET).build();
-                            httpClient.newCall(request).enqueue(new Callback() {
-                                @Override
-                                public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                                    runOnUiThread(() -> {
-                                        showErrorDialog(e.toString());
-                                    });
-                                }
-
-                                @Override
-                                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                                    if (response.isSuccessful()) {
-                                        ResponseBody body = response.body();
-                                        if (body == null) {
-                                            runOnUiThread(() -> showErrorDialog("Server response is empty"));
-                                        } else {
-                                            String encrypted_password = body.string();
-                                            runOnUiThread(() -> Toast.makeText(MainActivity.this, "OK", Toast.LENGTH_SHORT).show());
-                                            bleConnector.writeData(Base64.getDecoder().decode(encrypted_password));
-                                        }
-                                    } else {
-                                        runOnUiThread(() -> showErrorDialog(response.code() + ": " + response.message()));
-                                    }
-                                }
-                            });
-                        }));
-                        recyclerView.setAdapter(adapter);
-                    });
+        if (useLocalDB) {
+            accounts = db.getAllRecords();
+            for (Account account : accounts) {
+                if (account == null) {
+                    Log.e("ACCOUNT", "NULL");
                 } else {
-                    runOnUiThread(() -> showErrorDialog(response.code() + ": " + response.message()));
+                    Log.i("Account", "Id: " + account.getId() + " Service: " + account.getService() + " Login: " + account.getLogin());
                 }
             }
-        });
+            RecyclerView recyclerView = findViewById(R.id.list);
+            AccountAdapter adapter = new AccountAdapter(MainActivity.this, accounts, (account) -> {
+                String encryptedPassword = db.getEncryptedPassword(account.getId());
+                Toast.makeText(MainActivity.this, "OK", Toast.LENGTH_SHORT).show();
+                bleConnector.writeData(Base64.getDecoder().decode(encryptedPassword));
+            });
+            recyclerView.setAdapter(adapter);
+        } else {
+            Request request = new Request.Builder().url(SERVER_URL + "/logins").header("Authorization", SECRET).build();
+            httpClient.newCall(request).enqueue(new Callback() {
+                @Override
+                public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                    runOnUiThread(() -> showErrorDialog(e.toString()));
+                }
+
+                @Override
+                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                    if (response.isSuccessful()) {
+                        ResponseBody body = response.body();
+                        if (body == null) {
+                            runOnUiThread(() -> showErrorDialog("Server response is empty"));
+                            return;
+                        }
+                        Gson gson = new Gson();
+                        List<List<String>> json = gson.fromJson(body.string(), new TypeToken<Collection<Collection<String>>>() {
+                        }.getType());
+                        int n = json.size();
+                        accounts = new Account[n];
+                        for (int i = 0; i < n; i++) {
+                            List<String> item = json.get(i);
+                            if (item.get(0) == null || item.get(1) == null) {
+                                accounts[i] = new Account("Error", "Error");
+                            } else {
+                                accounts[i] = new Account(item.get(0), item.get(1));
+                            }
+                        }
+                        runOnUiThread(() -> {
+                            RecyclerView recyclerView = findViewById(R.id.list);
+                            AccountAdapter adapter = new AccountAdapter(MainActivity.this, accounts, ((account) -> {
+                                Request request = new Request.Builder().url(SERVER_URL + "/pass?service=" + account.getService() + "&login=" + account.getLogin()).header("Authorization", SECRET).build();
+                                httpClient.newCall(request).enqueue(new Callback() {
+                                    @Override
+                                    public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                                        runOnUiThread(() -> showErrorDialog(e.toString()));
+                                    }
+
+                                    @Override
+                                    public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                                        if (response.isSuccessful()) {
+                                            ResponseBody body = response.body();
+                                            if (body == null) {
+                                                runOnUiThread(() -> showErrorDialog("Server response is empty"));
+                                            } else {
+                                                String encryptedPassword = body.string();
+                                                runOnUiThread(() -> Toast.makeText(MainActivity.this, "OK", Toast.LENGTH_SHORT).show());
+                                                bleConnector.writeData(Base64.getDecoder().decode(encryptedPassword));
+                                            }
+                                        } else {
+                                            runOnUiThread(() -> showErrorDialog(response.code() + ": " + response.message()));
+                                        }
+                                    }
+                                });
+                            }));
+                            recyclerView.setAdapter(adapter);
+                        });
+                    } else {
+                        runOnUiThread(() -> showErrorDialog(response.code() + ": " + response.message()));
+                    }
+                }
+            });
+        }
     }
 
     private void showFormDialog() {
@@ -232,27 +257,7 @@ public class MainActivity extends AppCompatActivity {
             } else {
                 password = editTextPassword.getText().toString();
             }
-            Request request = new Request.Builder().header("Authorization", SECRET).url(SERVER_URL + "/add").post(new FormBody.Builder().add("service", editTextService.getText().toString()).add("login", editTextLogin.getText().toString())
-                    .add("encrypted_password", Base64.getEncoder().encodeToString(encrypt(password.getBytes())))
-                    .build()).build();
-            httpClient.newCall(request).enqueue(new Callback() {
-                @Override
-                public void onFailure(@NonNull Call call, @NonNull IOException e) {
-                    runOnUiThread(() -> showErrorDialog(e.toString()));
-                }
-
-                @Override
-                public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
-                    if (response.isSuccessful()) {
-                        runOnUiThread(() -> {
-                            Toast.makeText(MainActivity.this, "OK", Toast.LENGTH_SHORT).show();
-                            updateAccountsArray();
-                        });
-                    } else {
-                        runOnUiThread(() -> showErrorDialog(response.code() + ": " + response.message()));
-                    }
-                }
-            });
+            addNewRecord(editTextService.getText().toString(), editTextLogin.getText().toString(), password);
             dialog.dismiss();
         });
 
@@ -280,6 +285,31 @@ public class MainActivity extends AppCompatActivity {
         specialsCheckBox.setChecked(true);
 
         dialog.show();
+    }
+
+    private void addNewRecord(String service, String login, String password) {
+        db.addNewRecord(service, login, Base64.getEncoder().encodeToString(encrypt(password.getBytes())));
+        Request request = new Request.Builder().header("Authorization", SECRET).url(SERVER_URL + "/add").post(new FormBody.Builder().add("service", service).add("login", login)
+                .add("encrypted_password", Base64.getEncoder().encodeToString(encrypt(password.getBytes())))
+                .build()).build();
+        httpClient.newCall(request).enqueue(new Callback() {
+            @Override
+            public void onFailure(@NonNull Call call, @NonNull IOException e) {
+                runOnUiThread(() -> showErrorDialog(e.toString()));
+            }
+
+            @Override
+            public void onResponse(@NonNull Call call, @NonNull Response response) {
+                if (response.isSuccessful()) {
+                    runOnUiThread(() -> {
+                        Toast.makeText(MainActivity.this, "OK", Toast.LENGTH_SHORT).show();
+                        updateAccountsArray();
+                    });
+                } else {
+                    runOnUiThread(() -> showErrorDialog(response.code() + ": " + response.message()));
+                }
+            }
+        });
     }
 
     private String generatePassword(int length, boolean ascii_flag, boolean digits_flag, boolean specials_flag) {
@@ -348,7 +378,6 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                                 super.onConnectionStateChange(gatt, status, newState);
-                                Log.i("NEW STATE", "State: " + newState);
                                 gatt.requestMtu(517);
                                 if (newState == BluetoothProfile.STATE_CONNECTED) {
                                     gatt.discoverServices();
@@ -360,7 +389,6 @@ public class MainActivity extends AppCompatActivity {
                             @Override
                             public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
                                 super.onCharacteristicWrite(gatt, characteristic, status);
-                                Log.i("Characteristic write", "Status: " + status);
                             }
 
                             @Override
@@ -386,7 +414,6 @@ public class MainActivity extends AppCompatActivity {
                                 }
                                 gatt.writeCharacteristic(tokenCharacteristic, BLE_SECURITY_TOKEN.getBytes(StandardCharsets.UTF_8), BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
                                 isConnectedFlag = true;
-                                Log.i("BLE", "Connected");
                                 runOnUiThread(() -> Toast.makeText(MainActivity.this, "Connected", Toast.LENGTH_SHORT).show());
                             }
                         });
@@ -402,7 +429,6 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
             connectedGatt.writeCharacteristic(dataCharacteristic, data, BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT);
-            Log.i("WRITE", "WRITE");
         }
     }
 
@@ -430,7 +456,7 @@ public class MainActivity extends AppCompatActivity {
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             return keyFactory.generatePublic(keySpec);
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
-            Log.e("Key loading", "Key parding error");
+            Log.e("Key loading", "Key padding error");
             throw new RuntimeException(e);
         }
     }
