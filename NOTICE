@@ -1,0 +1,30 @@
+Hardware Password Manager
+Copyright (c) 2025 takinrom
+
+This software is licensed under the MIT License.
+See the LICENSE file for full license text.
+
+Third-party components and dependencies:
+
+Apache 2.0 Licensed Components:
+- Android SDK and related components
+  - AndroidX libraries (appcompat, material, activity, constraintlayout)
+  - Android Gradle Plugin
+  - Gradle Wrapper
+- Server Components
+  - Flask web framework
+- ESP32 Components
+  - ESP32 platform and tools
+  - NimBLE-Arduino library
+- See https://www.apache.org/licenses/LICENSE-2.0 for full license text
+
+Other Components:
+- PlatformIO (for microcontroller development)
+- Gunicorn (MIT License)
+- OneButton library (MIT License)
+- Arduino framework (LGPL)
+- Python packages (for server implementation)
+  - See Server/src/requirements.txt for details
+
+The project uses BLE (Bluetooth Low Energy) for communication between
+the Android application and microcontroller.
